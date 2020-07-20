@@ -59,7 +59,7 @@ def create_app(test_config=None):
   Clicking on the page numbers should update the questions. 
   '''
   @app.route('/questions')
-  def retreive_questions():
+  def retrieve_questions():
     try:
       page = request.args.get('page',1,type=int)
       start = (page - 1) * 10
@@ -72,13 +72,13 @@ def create_app(test_config=None):
       # current_questions = paginate_questions(request, selections)
       if len(questions) == 0:
         abort(404)
-      return({
+      return(jsonify({
         'success': True,
         'questions': formatted_questions[start:end],
         'categories': categories_formatted,
         'total_questions': len(formatted_questions),
         'current_category': None
-      })
+      }))
     except:
       abort(404)
 
@@ -100,9 +100,10 @@ def create_app(test_config=None):
       question.delete()
       selection = Question.query.order_by(Question.id).all()
 
-      return jsonify({
-        'success': True
-      })
+      return (jsonify({
+        'success': True,
+        'delete': question_id
+      }))
     except:
       abort(422)
 
@@ -121,6 +122,8 @@ def create_app(test_config=None):
   def create_questions():
     try:
       body = request.get_json()
+      if not body:
+        abort(400)
       new_question = body.get('question',None)
       new_answer = body.get('answer',None)
       new_categories = body.get('category',None)
@@ -135,7 +138,7 @@ def create_app(test_config=None):
         'current_category':category_type
       }
     except:
-      abort(422)
+      abort(400)
     return jsonify(result)
 
 
@@ -186,12 +189,12 @@ def create_app(test_config=None):
       formatted_questions = [question.format() for question in questions]
       if len(questions) == 0:
         abort(404)
-      return({
+      return (jsonify({
         'success': True,
         'questions': formatted_questions[start:end],
         'total_questions': len(formatted_questions),
         'current_category': None
-      })
+      }))
     except:
       abort(422)
 
@@ -206,35 +209,51 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
-  @app.route('/play', methods=['POST'])
-  def create_quiz():
+  @app.route('/quizzes', methods=['POST'])
+  #Created with help from https://knowledge.udacity.com/questions/234306
+  def create_quizzes():
     body = request.get_json()
-    previous_questions = body.get('previous_questions', [])
-    quiz_category = body.get('quiz_category','')
+    if not body:
+      abort(400)
+    previous = body.get('previous_questions', [])
+    category = body.get('quiz_category','')
 
-    try:
-      if quiz_category:
-        if quiz_category['id'] == 0:
-          quiz_questions = Question.query.all()
+    if previous:
+      if category:
+        if category['id'] == 0:
+          questions = Question.query.filter(~Question.id.in_(previous)).all()
         else:
-          quiz_questions = Question.query.filter(Question.category == quiz_category['id']).all()
-      if quiz_questions is None:
-        abort(404)
-      selected = []
-      for question in quiz_questions:
-        if question.id not in previous_questions:
-          selected.append(question.format())
-      if len(selected)!= 0:
-        result = random.choice(selected)
-        return jsonify({
-          'question': result
-        })
-      else:
-        return jsonify({
-          'question': False
-        })
-    except:
-      abort(422)
+          questions = Question.query.filter(Question.category == category['id']).filter(~Question.id.in_(previous)).all()
+        question_format = [q.format() for q in questions]
+        if len(questions) != 0:
+          random_result = random.choice(question_format)
+          return jsonify({
+            'success': True,
+            'question': random_result,
+          })
+        else:
+          return jsonify({
+            'question':False
+          })
+    else:
+      if category:
+        if category['id'] == 0:
+          questions = Question.query.all()
+        else:
+          questions = Question.query.filter(Question.category == category['id']).all()
+        question_format = [q.format() for q in questions]
+        if len(questions) != 0:
+          random_result = random.choice(question_format)
+          return jsonify({
+            'success': True,
+            'question': random_result,
+          })
+        else:
+          return jsonify({
+            'question':False
+          })
+
+
 
   '''
   @TODO: 
@@ -268,7 +287,7 @@ def create_app(test_config=None):
   @app.errorhandler(400)
   def bad_request(error):
     return jsonify({
-      'succes': False,
+      'success': False,
       'error': 400,
       'message': 'Bad Request'
     })
