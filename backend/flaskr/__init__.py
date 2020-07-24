@@ -38,13 +38,12 @@ def create_app(test_config=None):
       categories_formatted = {category.id: category.type for category in categories}
       if categories is None:
         abort(404)
-      
       return jsonify({
         'success': True,
         'categories': categories_formatted
       })
     except:
-      abort(400)
+      abort(422)
 
 
   '''
@@ -80,7 +79,7 @@ def create_app(test_config=None):
         'current_category': None
       }))
     except:
-      abort(404)
+      abort(422)
 
 
   '''
@@ -108,6 +107,7 @@ def create_app(test_config=None):
       abort(422)
 
 
+
   '''
   @TODO: 
   Create an endpoint to POST a new question, 
@@ -128,7 +128,8 @@ def create_app(test_config=None):
       new_answer = body.get('answer',None)
       new_categories = body.get('category',None)
       new_difficulty = body.get('difficulty',None)
-      question = Question(question=new_question, answer=new_answer, category=new_categories, difficulty=new_difficulty)
+      question = Question(question=new_question, answer=new_answer,
+                    category=new_categories, difficulty=new_difficulty)
       question.insert()
       category_type = Category.query.get(new_categories).type
       result = {
@@ -213,45 +214,48 @@ def create_app(test_config=None):
   #Created with help from https://knowledge.udacity.com/questions/234306
   def create_quizzes():
     body = request.get_json()
-    if not body:
-      abort(400)
-    previous = body.get('previous_questions', [])
-    category = body.get('quiz_category','')
+    try:
+      if not body:
+        abort(400)
+      previous = body.get('previous_questions', [])
+      category = body.get('quiz_category','')
 
-    if previous:
-      if category:
-        if category['id'] == 0:
-          questions = Question.query.filter(~Question.id.in_(previous)).all()
-        else:
-          questions = Question.query.filter(Question.category == category['id']).filter(~Question.id.in_(previous)).all()
-        question_format = [q.format() for q in questions]
-        if len(questions) != 0:
-          random_result = random.choice(question_format)
-          return jsonify({
-            'success': True,
-            'question': random_result,
-          })
-        else:
-          return jsonify({
-            'question':False
-          })
-    else:
-      if category:
-        if category['id'] == 0:
-          questions = Question.query.all()
-        else:
-          questions = Question.query.filter(Question.category == category['id']).all()
-        question_format = [q.format() for q in questions]
-        if len(questions) != 0:
-          random_result = random.choice(question_format)
-          return jsonify({
-            'success': True,
-            'question': random_result,
-          })
-        else:
-          return jsonify({
-            'question':False
-          })
+      if previous:
+        if category:
+          if category['id'] == 0:
+            questions = Question.query.filter(~Question.id.in_(previous)).all()
+          else:
+            questions = Question.query.filter(Question.category == category['id']).filter(~Question.id.in_(previous)).all()
+          question_format = [q.format() for q in questions]
+          if len(questions) != 0:
+            random_result = random.choice(question_format)
+            return jsonify({
+              'success': True,
+              'question': random_result,
+            })
+          else:
+            return jsonify({
+              'question':False
+            })
+      else:
+        if category:
+          if category['id'] == 0:
+            questions = Question.query.all()
+          else:
+            questions = Question.query.filter(Question.category == category['id']).all()
+          question_format = [q.format() for q in questions]
+          if len(questions) != 0:
+            random_result = random.choice(question_format)
+            return jsonify({
+              'success': True,
+              'question': random_result,
+            })
+          else:
+            return jsonify({
+              'question':False
+            })
+    except:      
+      abort(422)
 
 
 

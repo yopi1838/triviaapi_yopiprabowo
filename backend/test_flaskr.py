@@ -34,6 +34,21 @@ class TriviaTestCase(unittest.TestCase):
     TODO
     Write at least one test for each test for successful operation and for expected errors.
     """
+    #Test return categories endpoint
+    def test_return_categories(self):
+        res = self.client().get('/categories')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['categories'])
+
+    def test_404_categories_not_found(self):
+        res = self.client().get('/categories/4')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'not_found')
+
     #test get questions endpoint
     def test_retrieve_questions(self):
         res = self.client().get('/questions')
@@ -44,16 +59,23 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['categories'])
         self.assertTrue(data['total_questions'])
         self.assertEqual(data['current_category'], None)
+
+    def test_422_retrieve_questions(self):
+        res = self.client().get('/question')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], "not_found")
     
     # delete page endpoint
     #created by self with help from https://knowledge.udacity.com/questions/268503 for test error delete
-    # def test_delete_questions(self):
-    #     res = self.client().delete('/questions/8')
-    #     data = json.loads(res.data)
-    #     #Assersion
-    #     self.assertEqual(res.status_code,200)
-    #     self.assertEqual(data['success'], True)
-    #     self.assertEqual(data['delete'], 8)
+    def test_delete_questions(self):
+        res = self.client().delete('/questions/8')
+        data = json.loads(res.data)
+        #Assersion
+        self.assertEqual(res.status_code,200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['delete'], 8)
 
     def test_error_delete_questions(self):
         res = self.client().delete('/questions/1000')
@@ -76,7 +98,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
 
-    def test_error_create_questions(self):
+    def test_400_create_questions(self):
         question = {
             'question': 'Lalalala',
             'answer': 'Llililili',
@@ -115,6 +137,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['total_questions'])
         self.assertEqual(data['current_category'], None)
 
+    def test_422_no_search_term(self):
+        res = self.client().post('/questions/search')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
+
+    #Test quiz questions
     def test_quiz_questions(self):
         #Got help from https://knowledge.udacity.com/questions/150173
         self.quiz_category = {
@@ -129,6 +159,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code,200)
         self.assertEqual(data['success'], True)
         self.assertTrue(data['question'])
+
+    def test_422_quiz_questions(self):
+        res = self.client().post('/quizzes')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
