@@ -1,6 +1,7 @@
 .vscode
 __pycache__
-venv
+lib/
+node_modules/
 
 # Editors
 .vscode/
