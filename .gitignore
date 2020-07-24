@@ -2,6 +2,13 @@
 __pycache__
 venv
 
+# Editors
+.vscode/
+.idea/
+
+# Mac/OSX
+.DS_Store
+
 # OS generated files #
 ######################
 .DS_Store
